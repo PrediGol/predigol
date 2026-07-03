@@ -37,7 +37,6 @@ export default function Home() {
 
   return (
     <main className="max-w-sm mx-auto px-4 py-6">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm bg-amber text-bg">
@@ -50,12 +49,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Titulo */}
       <div className="text-xs font-semibold text-muted mb-3">
         PARTIDOS DE HOY
       </div>
 
-      {/* Lista de partidos */}
       {matches.map((m, i) => {
         const confColor =
           m.confidence >= 80
