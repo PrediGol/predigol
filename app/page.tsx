@@ -1,39 +1,25 @@
-export default function Home() {
-  const matches = [
-    {
-      league: 'Mundial 2026 - 16avos',
-      time: 'Vie 19:00',
-      home: 'Argentina',
-      away: 'Cabo Verde',
-      pick: 'Argentina',
-      score: '2-0',
-      overUnder: 'Menos de 2.5',
-      corners: '+8.5',
-      confidence: 82,
-    },
-    {
-      league: 'LaLiga',
-      time: '18:30',
-      home: 'Real Madrid',
-      away: 'Sevilla',
-      pick: 'Real Madrid',
-      score: '2-0',
-      overUnder: 'Más de 2.5',
-      corners: '+9.5',
-      confidence: 87,
-    },
-    {
-      league: 'Liga Prof. Argentina',
-      time: '21:00',
-      home: 'River Plate',
-      away: 'Racing',
-      pick: 'River Plate',
-      score: '1-0',
-      overUnder: 'Menos de 2.5',
-      corners: '+8.5',
-      confidence: 62,
-    },
-  ]
+import { supabase } from '@/lib/supabase'
+
+export default async function Home() {
+  const { data: matches, error } = await supabase
+    .from('matches')
+    .select(`
+      id,
+      league,
+      match_date,
+      home_team:home_team_id ( name ),
+      away_team:away_team_id ( name ),
+      predictions ( predicted_winner, predicted_score, over_under_25, corners_prediction, confidence_winner )
+    `)
+    .order('match_date')
+
+  if (error) {
+    return (
+      <main className="max-w-sm mx-auto px-4 py-6 text-redc">
+        Error cargando partidos: {error.message}
+      </main>
+    )
+  }
 
   return (
     <main className="max-w-sm mx-auto px-4 py-6">
@@ -53,31 +39,34 @@ export default function Home() {
         PARTIDOS DE HOY
       </div>
 
-      {matches.map((m, i) => {
+      {matches?.map((m: any) => {
+        const p = m.predictions?.[0]
+        if (!p) return null
+
         const confColor =
-          m.confidence >= 80
+          p.confidence_winner >= 80
             ? 'text-green'
-            : m.confidence >= 60
+            : p.confidence_winner >= 60
             ? 'text-yellowc'
             : 'text-redc'
 
         return (
           <div
-            key={i}
+            key={m.id}
             className="rounded-2xl p-4 mb-3 bg-card border border-cardBorder"
           >
             <div className="text-[11px] font-semibold text-muted mb-3">
-              {m.league} · {m.time}
+              {m.league}
             </div>
 
             <div className="flex items-center justify-between mb-3">
               <div>
-                <div className="font-bold text-sm">{m.home}</div>
-                <div className="font-bold text-sm mt-1">{m.away}</div>
+                <div className="font-bold text-sm">{m.home_team?.name}</div>
+                <div className="font-bold text-sm mt-1">{m.away_team?.name}</div>
               </div>
               <div className="text-center">
                 <div className={`font-mono font-bold text-xl ${confColor}`}>
-                  {m.confidence}%
+                  {p.confidence_winner}%
                 </div>
                 <div className="text-[9px] text-muted">CONFIANZA IA</div>
               </div>
@@ -86,19 +75,19 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg py-2 text-center bg-bg">
                 <div className="text-[9px] text-muted">GANADOR</div>
-                <div className="text-xs font-bold">{m.pick}</div>
+                <div className="text-xs font-bold">{p.predicted_winner}</div>
               </div>
               <div className="rounded-lg py-2 text-center bg-bg">
                 <div className="text-[9px] text-muted">RESULTADO</div>
-                <div className="text-xs font-bold">{m.score}</div>
+                <div className="text-xs font-bold">{p.predicted_score}</div>
               </div>
               <div className="rounded-lg py-2 text-center bg-bg">
                 <div className="text-[9px] text-muted">GOLES</div>
-                <div className="text-xs font-bold">{m.overUnder}</div>
+                <div className="text-xs font-bold">{p.over_under_25}</div>
               </div>
               <div className="rounded-lg py-2 text-center bg-bg">
                 <div className="text-[9px] text-muted">CORNERS</div>
-                <div className="text-xs font-bold">{m.corners}</div>
+                <div className="text-xs font-bold">{p.corners_prediction}</div>
               </div>
             </div>
           </div>
