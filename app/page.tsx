@@ -40,7 +40,8 @@ export default async function Home() {
       </div>
 
       {matches?.map((m: any) => {
-        const p = m.predictions?.[0]
+                const p = Array.isArray(m.predictions) ? m.predictions[0] : m.predictions
+
         if (!p) return null
 
         const confColor =
