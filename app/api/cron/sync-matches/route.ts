@@ -9,7 +9,7 @@ const LEAGUES_TO_TRACK = [39, 140, 135, 78, 61, 128]
 
 export async function GET() {
   try {
-    const today = new Date().toISOString().split('T')[0]
+    const today = '2026-07-05'
     const fixtures = await getFixturesByDate(today)
 
     const relevant = fixtures.filter((f: any) =>
