@@ -48,7 +48,13 @@ export async function GET() {
       savedCount++
     }
 
-    return NextResponse.json({
+    return NextResponse.json({worldCupDirect: worldCupDirectData.response?.map((f: any) => ({ teams: `${f.teams.home.name} vs ${f.teams.away.name}`, date: f.fixture.date })) || worldCupDirectData.errors,
+
+      const worldCupDirectCheck = await fetch(
+  `https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${today}`,
+  { headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }, cache: 'no-store' }
+)
+const worldCupDirectData = await worldCupDirectCheck.json()
       success: true,
       totalFixturesThatDay: fixtures.length,
       matchesFound: relevant.length,
