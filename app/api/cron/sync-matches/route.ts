@@ -50,9 +50,12 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
+      totalFixturesThatDay: fixtures.length,
       matchesFound: relevant.length,
       saved: savedCount,
+      sampleLeagueIds: fixtures.slice(0, 5).map((f: any) => ({ id: f.league.id, name: f.league.name })),
     })
+
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message },
