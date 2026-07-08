@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
 
 // IDs de ligas que vamos a seguir (Premier League, LaLiga, Serie A, Bundesliga, Ligue 1, Liga Prof. Argentina)
-const LEAGUES_TO_TRACK = [1,39, 140, 135, 78, 61, 128]
+const LEAGUES_TO_TRACK = [1, 39, 140, 135, 78, 61, 128]
 
 export async function GET() {
   try {
