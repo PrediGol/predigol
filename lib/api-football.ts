@@ -13,5 +13,10 @@ export async function getFixturesByDate(date: string) {
   }
 
   const data = await response.json()
+
+  if (data.errors && Object.keys(data.errors).length > 0) {
+    throw new Error(`API-Football devolvió errores: ${JSON.stringify(data.errors)}`)
+  }
+
   return data.response
 }
