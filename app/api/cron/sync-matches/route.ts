@@ -53,7 +53,8 @@ export async function GET() {
       totalFixturesThatDay: fixtures.length,
       matchesFound: relevant.length,
       saved: savedCount,
-      sampleLeagueIds: fixtures.slice(0, 5).map((f: any) => ({ id: f.league.id, name: f.league.name })),
+      worldCupMatches: fixtures.filter((f: any) => f.league.name.includes('World Cup') || f.league.id === 1).map((f: any) => ({ id: f.league.id, name: f.league.name, teams: `${f.teams.home.name} vs ${f.teams.away.name}` })),
+allLeagueNames: [...new Set(fixtures.map((f: any) => f.league.name))],
     })
 
   } catch (error: any) {
