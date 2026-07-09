@@ -57,7 +57,6 @@ export async function GET() {
 
         savedCount++
 
-        // Generar prediccion automatica si no existe todavia
         const { data: existingPrediction } = await supabase
           .from('predictions')
           .select('match_id')
@@ -79,6 +78,8 @@ export async function GET() {
               over_under_25: prediction.over_under_25,
               corners_prediction: prediction.corners_prediction,
               confidence_winner: prediction.confidence_winner,
+              confidence_score: prediction.confidence_score,
+              confidence_ou: prediction.confidence_ou,
               tier: 'free',
               generated_at: new Date().toISOString(),
             })
