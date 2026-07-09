@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const today = new Date().toISOString().split('T')[0]
+    const today = '2026-07-09'
     const matches = await getMatchesByDate(today)
 
     let savedCount = 0
