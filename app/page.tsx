@@ -38,7 +38,7 @@ export default async function Home() {
       </div>
 
       <p className="text-sm text-muted mb-6">
-        PrediGol: Donde la intuición se vuelve estadística.
+        Donde la intuición se vuelve estadística.
       </p>
 
       <div className="text-xs font-semibold text-muted mb-3">
