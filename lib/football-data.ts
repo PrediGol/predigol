@@ -9,7 +9,8 @@ export async function getMatchesByDate(date: string) {
   })
 
   if (!response.ok) {
-    throw new Error(`Error consultando football-data.org: ${response.status}`)
+    const errorBody = await response.text()
+    throw new Error(`Error consultando football-data.org: ${response.status} - ${errorBody}`)
   }
 
   const data = await response.json()
