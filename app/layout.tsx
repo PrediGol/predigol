@@ -1,4 +1,5 @@
 import './globals.css'
+import BottomNav from '@/components/BottomNav'
 
 export const metadata = {
   title: 'PrediGol',
@@ -12,7 +13,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <div style={{ paddingBottom: '80px' }}>{children}</div>
+        <BottomNav />
+      </body>
     </html>
   )
 }
