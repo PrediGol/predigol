@@ -24,9 +24,6 @@ function findTeamStats(table: any[], teamId: number) {
   const team = table.find((t: any) => t.team.id === teamId)
   if (!team || team.playedGames === 0) return null
   return {
-    played: team.playedGames,
-    goalsFor: team.goalsFor,
-    goalsAgainst: team.goalsAgainst,
     avgFor: team.goalsFor / team.playedGames,
     avgAgainst: team.goalsAgainst / team.playedGames,
   }
@@ -38,19 +35,17 @@ export async function generatePrediction(
   competitionCode: string
 ) {
   const table = await getStandings(competitionCode)
-  if (!table || table.length === 0) return null
 
-  const homeStats = findTeamStats(table, homeTeamId)
-  const awayStats = findTeamStats(table, awayTeamId)
+  const homeStats = table ? findTeamStats(table, homeTeamId) : null
+  const awayStats = table ? findTeamStats(table, awayTeamId) : null
 
-  // Si no hay suficientes datos historicos (ej: recien arranca la temporada), usamos valores neutros
   const leagueAvgGoals = 1.3
   const homeAttack = homeStats ? homeStats.avgFor / leagueAvgGoals : 1
   const homeDefense = homeStats ? homeStats.avgAgainst / leagueAvgGoals : 1
   const awayAttack = awayStats ? awayStats.avgFor / leagueAvgGoals : 1
   const awayDefense = awayStats ? awayStats.avgAgainst / leagueAvgGoals : 1
 
-  const expectedHomeGoals = homeAttack * awayDefense * leagueAvgGoals * 1.1 // 1.1 = bonus localia
+  const expectedHomeGoals = homeAttack * awayDefense * leagueAvgGoals * 1.1
   const expectedAwayGoals = awayAttack * homeDefense * leagueAvgGoals
 
   const maxGoals = 6
@@ -83,9 +78,18 @@ export async function generatePrediction(
     }
   }
 
-  const probs = [pHomeWin, pDraw, pAwayWin].sort((a, b) => b - a)
-  const diff = probs[0] - probs[1]
-  const confidence = Math.min(95, Math.max(50, Math.round(50 + diff * 60)))
+  // Confianza del GANADOR
+  const winnerProbs = [pHomeWin, pDraw, pAwayWin].sort((a, b) => b - a)
+  const winnerDiff = winnerProbs[0] - winnerProbs[1]
+  const winnerConfidence = Math.min(95, Math.max(50, Math.round(50 + winnerDiff * 60)))
+
+  // Confianza del RESULTADO EXACTO (siempre mas bajo, porque hay muchos marcadores posibles)
+  const scoreConfidence = Math.min(60, Math.max(15, Math.round(bestProb * 250)))
+
+  // Confianza de GOLES (over/under)
+  const pUnder25 = 1 - pOver25
+  const goalsDiff = Math.abs(pOver25 - pUnder25)
+  const goalsConfidence = Math.min(95, Math.max(50, Math.round(50 + goalsDiff * 90)))
 
   let predictedWinner: string
   if (pHomeWin > pDraw && pHomeWin > pAwayWin) predictedWinner = 'home'
@@ -96,7 +100,9 @@ export async function generatePrediction(
     predicted_winner: predictedWinner,
     predicted_score: `${bestHome}-${bestAway}`,
     over_under_25: pOver25 > 0.5 ? 'Más de 2.5' : 'Menos de 2.5',
-    corners_prediction: '+9.5', // placeholder, ajustamos mas adelante con datos reales de corners
-    confidence_winner: confidence,
+    corners_prediction: '+9.5',
+    confidence_winner: winnerConfidence,
+    confidence_score: scoreConfidence,
+    confidence_ou: goalsConfidence,
   }
 }
