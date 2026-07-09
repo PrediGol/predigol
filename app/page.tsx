@@ -11,8 +11,8 @@ export default async function Home() {
       id,
       league,
       match_date,
-      home_team:home_team_id ( name ),
-      away_team:away_team_id ( name ),
+      home_team:home_team_id ( name, logo_url ),
+      away_team:away_team_id ( name, logo_url ),
       predictions ( predicted_winner, predicted_score, over_under_25, corners_prediction, confidence_winner, confidence_score, confidence_ou )
     `)
     .order('match_date')
@@ -38,7 +38,7 @@ export default async function Home() {
       </div>
 
       <p className="text-sm text-muted mb-6">
-        Donde la intuición se vuelve estadística.
+        PrediGol: Donde la intuición se vuelve estadística.
       </p>
 
       <div className="text-xs font-semibold text-muted mb-3">
@@ -71,9 +71,21 @@ export default async function Home() {
               {m.league}
             </div>
 
-            <div className="mb-3">
-              <div className="font-bold text-sm">{m.home_team?.name}</div>
-              <div className="font-bold text-sm mt-1">{m.away_team?.name}</div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  {m.home_team?.logo_url && (
+                    <img src={m.home_team.logo_url} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />
+                  )}
+                  <div className="font-bold text-sm">{m.home_team?.name}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {m.away_team?.logo_url && (
+                    <img src={m.away_team.logo_url} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />
+                  )}
+                  <div className="font-bold text-sm">{m.away_team?.name}</div>
+                </div>
+              </div>
             </div>
 
             <div className="rounded-xl p-3 mb-3" style={{ background: '#1C2330' }}>
