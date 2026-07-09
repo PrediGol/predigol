@@ -27,9 +27,12 @@ export default async function Home() {
 
   return (
     <main className="max-w-sm mx-auto px-4 py-6">
-      <div className="flex items-start justify-between mb-2">
-        <Image src="/logo.png" alt="PrediGol" width={220} height={90} priority />
-        <div className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green/10 text-green mt-2">
+          <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Image src="/logo.png" alt="PrediGol" width={44} height={44} priority style={{ objectFit: 'contain' }} />
+          <span className="font-bold text-xl tracking-tight">PrediGol</span>
+        </div>
+        <div className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green/10 text-green">
           74% ACIERTO
         </div>
       </div>
@@ -37,6 +40,9 @@ export default async function Home() {
       <p className="text-sm text-muted mb-6">
         PrediGol: Donde la intuición se vuelve estadística.
       </p>
+
+
+      className="text-sm text-
 
       <div className="text-xs font-semibold text-muted mb-3">
         PARTIDOS DE HOY
