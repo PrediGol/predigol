@@ -4,6 +4,16 @@ export const revalidate = 0
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
 
+const STAGE_LABELS: Record<string, string> = {
+  FINAL: 'Final',
+  SEMI_FINALS: 'Semifinal',
+  QUARTER_FINALS: 'Cuartos de Final',
+  LAST_16: 'Octavos de Final',
+  ROUND_16: 'Octavos de Final',
+  GROUP_STAGE: 'Fase de Grupos',
+  REGULAR_SEASON: '',
+}
+
 export default async function Home() {
   const { data: matches, error } = await supabase
     .from('matches')
@@ -11,6 +21,7 @@ export default async function Home() {
       id,
       league,
       match_date,
+      stage,
       home_team:home_team_id ( name, logo_url ),
       away_team:away_team_id ( name, logo_url ),
       predictions ( predicted_winner, predicted_score, over_under_25, corners_prediction, confidence_winner, confidence_score, confidence_ou )
@@ -62,6 +73,16 @@ export default async function Home() {
         const confColor = (val: number) =>
           val >= 80 ? 'text-green' : val >= 60 ? 'text-yellowc' : 'text-redc'
 
+        const stageLabel = m.stage ? STAGE_LABELS[m.stage] ?? '' : ''
+
+        const timeLabel = m.match_date
+          ? new Date(m.match_date).toLocaleTimeString('es-AR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZone: 'America/Argentina/Buenos_Aires',
+            })
+          : ''
+
         return (
           <div
             key={m.id}
@@ -69,6 +90,8 @@ export default async function Home() {
           >
             <div className="text-[11px] font-semibold text-muted mb-3">
               {m.league}
+              {stageLabel && ` · ${stageLabel}`}
+              {timeLabel && ` · ${timeLabel} hs`}
             </div>
 
             <div className="flex items-center justify-between mb-3">
