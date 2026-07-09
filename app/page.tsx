@@ -12,7 +12,7 @@ export default async function Home() {
       match_date,
       home_team:home_team_id ( name ),
       away_team:away_team_id ( name ),
-      predictions ( predicted_winner, predicted_score, over_under_25, corners_prediction, confidence_winner )
+      predictions ( predicted_winner, predicted_score, over_under_25, corners_prediction, confidence_winner, confidence_score, confidence_ou )
     `)
     .order('match_date')
 
@@ -43,16 +43,37 @@ export default async function Home() {
       </div>
 
       {matches?.map((m: any) => {
-                const p = Array.isArray(m.predictions) ? m.predictions[0] : m.predictions
-
+        const p = Array.isArray(m.predictions) ? m.predictions[0] : m.predictions
         if (!p) return null
 
-        const confColor =
-          p.confidence_winner >= 80
-            ? 'text-green'
-            : p.confidence_winner >= 60
-            ? 'text-yellowc'
-            : 'text-redc'
+        // Determinar cual categoria tiene mayor confianza (esa es la Recomendacion)
+        const categories = [
+          {
+            key: 'winner',
+            label: 'GANADOR',
+            value: p.predicted_winner,
+            confidence: p.confidence_winner ?? 0,
+          },
+          {
+            key: 'score',
+            label: 'RESULTADO EXACTO',
+            value: p.predicted_score,
+            confidence: p.confidence_score ?? 0,
+          },
+          {
+            key: 'goals',
+            label: 'GOLES',
+            value: p.over_under_25,
+            confidence: p.confidence_ou ?? 0,
+          },
+        ]
+
+        const recommended = categories.reduce((best, curr) =>
+          curr.confidence > best.confidence ? curr : best
+        )
+
+        const confColor = (val: number) =>
+          val >= 80 ? 'text-green' : val >= 60 ? 'text-yellowc' : 'text-redc'
 
         return (
           <div
@@ -63,16 +84,25 @@ export default async function Home() {
               {m.league}
             </div>
 
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <div className="font-bold text-sm">{m.home_team?.name}</div>
-                <div className="font-bold text-sm mt-1">{m.away_team?.name}</div>
-              </div>
-              <div className="text-center">
-                <div className={`font-mono font-bold text-xl ${confColor}`}>
-                  {p.confidence_winner}%
+            <div className="mb-3">
+              <div className="font-bold text-sm">{m.home_team?.name}</div>
+              <div className="font-bold text-sm mt-1">{m.away_team?.name}</div>
+            </div>
+
+            {/* Recomendacion de la app */}
+            <div className="rounded-xl p-3 mb-3" style={{ background: '#1C2330' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[9px] font-bold text-amber mb-1">
+                    ⭐ RECOMENDACIÓN DE LA APP
+                  </div>
+                  <div className="text-sm font-bold">
+                    {recommended.label}: {recommended.value}
+                  </div>
                 </div>
-                <div className="text-[9px] text-muted">CONFIANZA IA</div>
+                <div className={`font-mono font-bold text-xl ${confColor(recommended.confidence)}`}>
+                  {recommended.confidence}%
+                </div>
               </div>
             </div>
 
@@ -80,14 +110,17 @@ export default async function Home() {
               <div className="rounded-lg py-2 text-center bg-bg">
                 <div className="text-[9px] text-muted">GANADOR</div>
                 <div className="text-xs font-bold">{p.predicted_winner}</div>
+                <div className={`text-[10px] font-mono ${confColor(p.confidence_winner ?? 0)}`}>{p.confidence_winner ?? 0}%</div>
               </div>
               <div className="rounded-lg py-2 text-center bg-bg">
                 <div className="text-[9px] text-muted">RESULTADO</div>
                 <div className="text-xs font-bold">{p.predicted_score}</div>
+                <div className={`text-[10px] font-mono ${confColor(p.confidence_score ?? 0)}`}>{p.confidence_score ?? 0}%</div>
               </div>
               <div className="rounded-lg py-2 text-center bg-bg">
                 <div className="text-[9px] text-muted">GOLES</div>
                 <div className="text-xs font-bold">{p.over_under_25}</div>
+                <div className={`text-[10px] font-mono ${confColor(p.confidence_ou ?? 0)}`}>{p.confidence_ou ?? 0}%</div>
               </div>
               <div className="rounded-lg py-2 text-center bg-bg">
                 <div className="text-[9px] text-muted">CORNERS</div>
