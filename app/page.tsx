@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 import { supabase } from '@/lib/supabase'
+import Image from 'next/image'
 
 export default async function Home() {
   const { data: matches, error } = await supabase
@@ -26,17 +27,16 @@ export default async function Home() {
 
   return (
     <main className="max-w-sm mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm bg-amber text-bg">
-            P
-          </div>
-          <span className="font-bold text-lg tracking-tight">PrediGol</span>
-        </div>
-        <div className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green/10 text-green">
+      <div className="flex items-start justify-between mb-2">
+        <Image src="/logo.png" alt="PrediGol" width={220} height={90} priority />
+        <div className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green/10 text-green mt-2">
           74% ACIERTO
         </div>
       </div>
+
+      <p className="text-sm text-muted mb-6">
+        PrediGol: Donde la intuición se vuelve estadística.
+      </p>
 
       <div className="text-xs font-semibold text-muted mb-3">
         PARTIDOS DE HOY
@@ -46,26 +46,10 @@ export default async function Home() {
         const p = Array.isArray(m.predictions) ? m.predictions[0] : m.predictions
         if (!p) return null
 
-        // Determinar cual categoria tiene mayor confianza (esa es la Recomendacion)
         const categories = [
-          {
-            key: 'winner',
-            label: 'GANADOR',
-            value: p.predicted_winner,
-            confidence: p.confidence_winner ?? 0,
-          },
-          {
-            key: 'score',
-            label: 'RESULTADO EXACTO',
-            value: p.predicted_score,
-            confidence: p.confidence_score ?? 0,
-          },
-          {
-            key: 'goals',
-            label: 'GOLES',
-            value: p.over_under_25,
-            confidence: p.confidence_ou ?? 0,
-          },
+          { key: 'winner', label: 'GANADOR', value: p.predicted_winner, confidence: p.confidence_winner ?? 0 },
+          { key: 'score', label: 'RESULTADO EXACTO', value: p.predicted_score, confidence: p.confidence_score ?? 0 },
+          { key: 'goals', label: 'GOLES', value: p.over_under_25, confidence: p.confidence_ou ?? 0 },
         ]
 
         const recommended = categories.reduce((best, curr) =>
@@ -89,7 +73,6 @@ export default async function Home() {
               <div className="font-bold text-sm mt-1">{m.away_team?.name}</div>
             </div>
 
-            {/* Recomendacion de la app */}
             <div className="rounded-xl p-3 mb-3" style={{ background: '#1C2330' }}>
               <div className="flex items-center justify-between">
                 <div>
