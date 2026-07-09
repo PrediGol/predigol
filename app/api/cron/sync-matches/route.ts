@@ -53,6 +53,7 @@ export async function GET() {
           league: m.competition.name,
           match_date: m.utcDate,
           status: 'scheduled',
+          stage: m.stage || null,
         })
 
         savedCount++
