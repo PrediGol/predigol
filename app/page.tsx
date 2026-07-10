@@ -15,6 +15,10 @@ const STAGE_LABELS: Record<string, string> = {
 }
 
 export default async function Home() {
+  const now = new Date()
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString()
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString()
+
   const { data: matches, error } = await supabase
     .from('matches')
     .select(`
@@ -22,10 +26,13 @@ export default async function Home() {
       league,
       match_date,
       stage,
+      status,
       home_team:home_team_id ( name, logo_url ),
       away_team:away_team_id ( name, logo_url ),
       predictions ( predicted_winner, predicted_score, over_under_25, corners_prediction, confidence_winner, confidence_score, confidence_ou )
     `)
+    .gte('match_date', startOfDay)
+    .lte('match_date', endOfDay)
     .order('match_date')
 
   if (error) {
@@ -55,6 +62,12 @@ export default async function Home() {
       <div className="text-xs font-semibold text-muted mb-3">
         PARTIDOS DE HOY
       </div>
+
+      {matches?.length === 0 && (
+        <div className="rounded-xl p-4 text-center bg-card border border-cardBorder text-sm text-muted">
+          No hay partidos programados para hoy en las ligas que seguimos.
+        </div>
+      )}
 
       {matches?.map((m: any) => {
         const p = Array.isArray(m.predictions) ? m.predictions[0] : m.predictions
