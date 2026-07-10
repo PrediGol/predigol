@@ -17,17 +17,16 @@ export default async function Historial() {
         league,
         home_team:home_team_id ( name ),
         away_team:away_team_id ( name )
-      ),
-      predictions:match_id (
-        predicted_winner,
-        predicted_score,
-        over_under_25,
-        confidence_winner,
-        confidence_score,
-        confidence_ou
       )
     `)
     .order('updated_at', { ascending: false })
+
+  const matchIds = results?.map((r: any) => r.match_id) ?? []
+
+  const { data: predictionsData } = await supabase
+    .from('predictions')
+    .select('match_id, predicted_winner, predicted_score, over_under_25, confidence_winner, confidence_score, confidence_ou')
+    .in('match_id', matchIds.length > 0 ? matchIds : [0])
 
   const total = results?.length ?? 0
   const winnerHits = results?.filter((r: any) => r.winner_correct).length ?? 0
@@ -53,7 +52,7 @@ export default async function Historial() {
       )}
 
       {results?.map((r: any) => {
-        const pred = Array.isArray(r.predictions) ? r.predictions[0] : r.predictions
+        const pred = predictionsData?.find((p: any) => p.match_id === r.match_id)
         if (!pred) return null
 
         const categories = [
