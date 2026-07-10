@@ -2,17 +2,36 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-
-const TABS = [
-  { href: '/', label: 'Inicio', icon: '🏠' },
-  { href: '/historial', label: 'Historial', icon: '📊' },
-  { href: '/vip', label: 'VIP', icon: '👑' },
-  { href: '/vivo', label: 'En Vivo', icon: '⚡' },
-  { href: '/usuario', label: 'Usuario', icon: '👤' },
-]
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 
 export default function BottomNav() {
   const pathname = usePathname()
+  const [userLabel, setUserLabel] = useState('Usuario')
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user?.email) {
+        setUserLabel(data.session.user.email.split('@')[0])
+      }
+    })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserLabel(session?.user?.email ? session.user.email.split('@')[0] : 'Usuario')
+    })
+
+    return () => {
+      listener.subscription.unsubscribe()
+    }
+  }, [])
+
+  const TABS = [
+    { href: '/', label: 'Inicio', icon: '🏠' },
+    { href: '/historial', label: 'Historial', icon: '📊' },
+    { href: '/vip', label: 'VIP', icon: '👑' },
+    { href: '/vivo', label: 'En Vivo', icon: '⚡' },
+    { href: '/usuario', label: userLabel, icon: '👤' },
+  ]
 
   return (
     <div
@@ -29,7 +48,7 @@ export default function BottomNav() {
           >
             <span className="text-lg">{tab.icon}</span>
             <span
-              className="text-[10px] font-semibold"
+              className="text-[10px] font-semibold truncate max-w-[60px]"
               style={{ color: active ? '#FFB020' : '#8A94A6' }}
             >
               {tab.label}
