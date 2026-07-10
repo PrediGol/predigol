@@ -13,11 +13,18 @@ export default async function Historial() {
       winner_correct,
       exact_score_correct,
       over_under_correct,
-      corners_correct,
       matches (
         league,
         home_team:home_team_id ( name ),
         away_team:away_team_id ( name )
+      ),
+      predictions:match_id (
+        predicted_winner,
+        predicted_score,
+        over_under_25,
+        confidence_winner,
+        confidence_score,
+        confidence_ou
       )
     `)
     .order('updated_at', { ascending: false })
@@ -45,24 +52,49 @@ export default async function Historial() {
         </div>
       )}
 
-      {results?.map((r: any) => (
-        <div
-          key={r.match_id}
-          className="rounded-xl p-3 mb-2 flex items-center justify-between bg-card border border-cardBorder"
-        >
-          <div>
-            <div className="text-xs font-semibold">
-              {r.matches?.home_team?.name} {r.actual_home_score}-{r.actual_away_score} {r.matches?.away_team?.name}
+      {results?.map((r: any) => {
+        const pred = Array.isArray(r.predictions) ? r.predictions[0] : r.predictions
+        if (!pred) return null
+
+        const categories = [
+          { label: 'Gana', value: pred.predicted_winner, confidence: pred.confidence_winner ?? 0, correct: r.winner_correct },
+          { label: 'Resultado', value: pred.predicted_score, confidence: pred.confidence_score ?? 0, correct: r.exact_score_correct },
+          { label: 'Goles', value: pred.over_under_25, confidence: pred.confidence_ou ?? 0, correct: r.over_under_correct },
+        ]
+
+        const recommended = categories.reduce((best, curr) =>
+          curr.confidence > best.confidence ? curr : best
+        )
+
+        return (
+          <div
+            key={r.match_id}
+            className="rounded-xl p-3 mb-2 bg-card border border-cardBorder"
+          >
+            <div className="text-[10px] text-muted mb-1">{r.matches?.league}</div>
+
+            <div className="text-sm font-semibold mb-3">
+              {r.matches?.home_team?.name} {r.actual_home_score} vs {r.matches?.away_team?.name} {r.actual_away_score}
             </div>
-            <div className="text-[10px] text-muted mt-0.5">{r.matches?.league}</div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[9px] font-bold text-amber mb-1">RECOMENDACIÓN DE LA APP</div>
+                <div className="text-sm font-bold">
+                  {recommended.label} {recommended.value}
+                </div>
+              </div>
+              <span
+                className={`text-[11px] font-bold px-2 py-1 rounded flex items-center gap-1 ${
+                  recommended.correct ? 'bg-green/20 text-green' : 'bg-redc/20 text-redc'
+                }`}
+              >
+                {recommended.correct ? '✅ ACERTADO' : '❌ NO ACERTADO'}
+              </span>
+            </div>
           </div>
-          <div className="flex gap-1">
-            <span className={`text-[10px] px-1.5 py-0.5 rounded ${r.winner_correct ? 'bg-green/20 text-green' : 'bg-redc/20 text-redc'}`}>
-              Ganador
-            </span>
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </main>
   )
 }
