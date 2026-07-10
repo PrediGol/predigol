@@ -16,8 +16,7 @@ async function getStandings(competitionCode: string) {
   )
   if (!response.ok) return null
   const data = await response.json()
-  const table = data.standings?.[0]?.table || []
-  return table
+  return data.standings?.[0]?.table || []
 }
 
 function findTeamStats(table: any[], teamId: number) {
@@ -29,15 +28,52 @@ function findTeamStats(table: any[], teamId: number) {
   }
 }
 
+// Para el Mundial: buscamos las estadisticas del equipo en sus partidos ya jugados del torneo
+async function getWorldCupTeamStats(teamId: number) {
+  const response = await fetch(
+    `https://api.football-data.org/v4/teams/${teamId}/matches?competitions=WC&status=FINISHED`,
+    {
+      headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_TOKEN! },
+      cache: 'no-store',
+    }
+  )
+  if (!response.ok) return null
+  const data = await response.json()
+  const matches = data.matches || []
+  if (matches.length === 0) return null
+
+  let goalsFor = 0
+  let goalsAgainst = 0
+
+  for (const m of matches) {
+    const isHome = m.homeTeam.id === teamId
+    const teamScore = isHome ? m.score.fullTime.home : m.score.fullTime.away
+    const opponentScore = isHome ? m.score.fullTime.away : m.score.fullTime.home
+    goalsFor += teamScore ?? 0
+    goalsAgainst += opponentScore ?? 0
+  }
+
+  return {
+    avgFor: goalsFor / matches.length,
+    avgAgainst: goalsAgainst / matches.length,
+  }
+}
+
 export async function generatePrediction(
   homeTeamId: number,
   awayTeamId: number,
   competitionCode: string
 ) {
-  const table = await getStandings(competitionCode)
+  let homeStats, awayStats
 
-  const homeStats = table ? findTeamStats(table, homeTeamId) : null
-  const awayStats = table ? findTeamStats(table, awayTeamId) : null
+  if (competitionCode === 'WC') {
+    homeStats = await getWorldCupTeamStats(homeTeamId)
+    awayStats = await getWorldCupTeamStats(awayTeamId)
+  } else {
+    const table = await getStandings(competitionCode)
+    homeStats = table ? findTeamStats(table, homeTeamId) : null
+    awayStats = table ? findTeamStats(table, awayTeamId) : null
+  }
 
   const leagueAvgGoals = 1.3
   const homeAttack = homeStats ? homeStats.avgFor / leagueAvgGoals : 1
@@ -78,15 +114,12 @@ export async function generatePrediction(
     }
   }
 
-  // Confianza del GANADOR
   const winnerProbs = [pHomeWin, pDraw, pAwayWin].sort((a, b) => b - a)
   const winnerDiff = winnerProbs[0] - winnerProbs[1]
   const winnerConfidence = Math.min(95, Math.max(50, Math.round(50 + winnerDiff * 60)))
 
-  // Confianza del RESULTADO EXACTO (siempre mas bajo, porque hay muchos marcadores posibles)
   const scoreConfidence = Math.min(60, Math.max(15, Math.round(bestProb * 250)))
 
-  // Confianza de GOLES (over/under)
   const pUnder25 = 1 - pOver25
   const goalsDiff = Math.abs(pOver25 - pUnder25)
   const goalsConfidence = Math.min(95, Math.max(50, Math.round(50 + goalsDiff * 90)))
