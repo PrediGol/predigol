@@ -2,61 +2,44 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const KEY = process.env.API_FOOTBALL_KEY!
-const BASE = 'https://v3.football.api-sports.io'
-
-async function check(url: string) {
-  try {
-    const res = await fetch(url, {
-      headers: { 'x-apisports-key': KEY },
-      cache: 'no-store',
-    })
-    const data = await res.json()
-    return {
-      results: data.results,
-      errors: data.errors,
-      sample: data.response?.[0] || null,
-    }
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
 export async function GET() {
-  const [
-    ligaArgentina,
-    copaLibertadores,
-    copaSudamericana,
-    copaArgentina,
-    primeraNacional,
-    h2h,
-    lesionados,
-    resultadosEnVivo,
-    cuotasPrePartido,
-    estadisticasEquipo,
-  ] = await Promise.all([
-    check(`${BASE}/fixtures?league=128&season=2026&next=5`),
-    check(`${BASE}/fixtures?league=13&season=2026&next=5`),
-    check(`${BASE}/fixtures?league=11&season=2026&next=5`),
-    check(`${BASE}/fixtures?league=130&season=2026&next=5`),
-    check(`${BASE}/fixtures?league=129&season=2026&next=5`),
-    check(`${BASE}/fixtures/headtohead?h2h=451-435&last=3`),
-    check(`${BASE}/injuries?league=128&season=2026`),
-    check(`${BASE}/fixtures?live=all`),
-    check(`${BASE}/odds?league=128&season=2026&bet=1`),
-    check(`${BASE}/teams/statistics?league=128&season=2026&team=451`),
-  ])
+  try {
+    // Buscamos el partido de España vs Belgica de hoy en football-data.org
+    const fdResponse = await fetch(
+      `https://api.football-data.org/v4/competitions/WC/matches?dateFrom=${new Date().toISOString().split('T')[0]}&dateTo=${new Date().toISOString().split('T')[0]}`,
+      { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_TOKEN! }, cache: 'no-store' }
+    )
+    const fdData = await fdResponse.json()
+    const fdMatch = fdData.matches?.find((m: any) =>
+      m.homeTeam.name.includes('Spain') || m.awayTeam.name.includes('Spain')
+    )
 
-  return NextResponse.json({
-    ligaArgentina,
-    copaLibertadores,
-    copaSudamericana,
-    copaArgentina,
-    primeraNacional,
-    h2h,
-    lesionados,
-    resultadosEnVivo,
-    cuotasPrePartido,
-    estadisticasEquipo,
-  })
+    // Buscamos el mismo partido en API-Football
+    const afResponse = await fetch(
+      `https://v3.football.api-sports.io/fixtures?date=${new Date().toISOString().split('T')[0]}&league=1&season=2026`,
+      { headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }, cache: 'no-store' }
+    )
+    const afData = await afResponse.json()
+
+    // Si encontramos el partido en API-Football, pedimos sus estadisticas (corners)
+    let afStats = null
+    const afMatch = afData.response?.find((f: any) =>
+      f.teams.home.name.includes('Spain') || f.teams.away.name.includes('Spain')
+    )
+    if (afMatch) {
+      const statsResponse = await fetch(
+        `https://v3.football.api-sports.io/fixtures/statistics?fixture=${afMatch.fixture.id}`,
+        { headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }, cache: 'no-store' }
+      )
+      afStats = await statsResponse.json()
+    }
+
+    return NextResponse.json({
+      football_data_match: fdMatch ? { id: fdMatch.id, status: fdMatch.status } : 'no encontrado',
+      api_football_match: afMatch ? { id: afMatch.fixture.id, status: afMatch.fixture.status } : afData.errors || 'no encontrado',
+      api_football_stats: afStats,
+    })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
 }
