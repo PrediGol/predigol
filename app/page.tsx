@@ -29,11 +29,19 @@ export default async function Home() {
       status,
       home_team:home_team_id ( name, logo_url ),
       away_team:away_team_id ( name, logo_url ),
-      predictions ( predicted_winner, predicted_score, over_under_25, corners_prediction, confidence_winner, confidence_score, confidence_ou )
+      predictions ( predicted_winner, predicted_score, over_under_25, confidence_winner, confidence_score, confidence_ou )
     `)
     .gte('match_date', startOfDay)
     .lte('match_date', endOfDay)
     .order('match_date')
+
+  const { data: results } = await supabase
+    .from('prediction_results')
+    .select('winner_correct')
+
+  const total = results?.length ?? 0
+  const hits = results?.filter((r: any) => r.winner_correct).length ?? 0
+  const accuracyPct = total > 0 ? Math.round((hits / total) * 100) : null
 
   if (error) {
     return (
@@ -51,7 +59,7 @@ export default async function Home() {
           <span className="font-bold text-xl tracking-tight">PrediGol</span>
         </div>
         <div className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green/10 text-green">
-          74% ACIERTO
+          {accuracyPct !== null ? `${accuracyPct}% ACIERTO` : 'SIN DATOS AÚN'}
         </div>
       </div>
 
@@ -140,7 +148,7 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <div className="rounded-lg py-2 text-center bg-bg">
                 <div className="text-[9px] text-muted">GANADOR</div>
                 <div className="text-xs font-bold">{p.predicted_winner}</div>
@@ -155,10 +163,6 @@ export default async function Home() {
                 <div className="text-[9px] text-muted">GOLES</div>
                 <div className="text-xs font-bold">{p.over_under_25}</div>
                 <div className={`text-[10px] font-mono ${confColor(p.confidence_ou ?? 0)}`}>{p.confidence_ou ?? 0}%</div>
-              </div>
-              <div className="rounded-lg py-2 text-center bg-bg">
-                <div className="text-[9px] text-muted">CORNERS</div>
-                <div className="text-xs font-bold">{p.corners_prediction}</div>
               </div>
             </div>
           </div>
