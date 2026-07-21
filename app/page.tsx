@@ -3,6 +3,8 @@ export const revalidate = 0
 
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
+import { getArgentinaToday } from '@/lib/dateRange'
+
 
 const STAGE_LABELS: Record<string, string> = {
   FINAL: 'Final',
@@ -15,9 +17,7 @@ const STAGE_LABELS: Record<string, string> = {
 }
 
 export default async function Home() {
-  const now = new Date()
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString()
-  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString()
+    const { startISO: startOfDay, endISO: endOfDay } = getArgentinaToday()
 
   const { data: matches, error } = await supabase
     .from('matches')
