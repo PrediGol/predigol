@@ -69,12 +69,11 @@ export default async function Historial({
     <main className="max-w-sm mx-auto px-4 py-6">
       <div className="text-lg font-bold mb-4">Historial de Predicciones</div>
 
-      <form method="GET" className="mb-4">
+            <form method="GET" className="mb-4 flex gap-2">
         <select
           name="mes"
           defaultValue={selectedMonth}
-          className="w-full rounded-lg px-3 py-2 text-sm bg-card border border-cardBorder"
-          onChange={(e) => e.currentTarget.form?.submit()}
+          className="flex-1 rounded-lg px-3 py-2 text-sm bg-card border border-cardBorder"
         >
           {monthOptions.map((ym) => {
             const [y, m] = ym.split('-')
@@ -85,7 +84,14 @@ export default async function Historial({
             )
           })}
         </select>
+        <button
+          type="submit"
+          className="px-4 py-2 rounded-lg text-sm font-bold bg-amber text-bg"
+        >
+          Ver
+        </button>
       </form>
+
 
       <div className="rounded-2xl p-5 mb-5 text-center bg-card border border-cardBorder">
         <div className="text-xs text-muted mb-1">{monthLabel}</div>
