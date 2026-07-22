@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 import { getArgentinaToday } from '@/lib/dateRange'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 const LEAGUES_OF_INTEREST = [
   1,
@@ -33,6 +34,56 @@ function groupByLeague(matches: any[]) {
   return groups
 }
 
+// Guarda en Supabase los goles de los partidos que están EN VIVO ahora mismo
+async function saveLiveGoals(matches: any[]) {
+  const rows: any[] = []
+
+  for (const f of matches) {
+    const goals = f.events?.filter((e: any) => e.type === 'Goal') || []
+    for (const g of goals) {
+      if (!g.player?.name) continue
+      rows.push({
+        fixture_id: f.fixture.id,
+        player_name: g.player.name,
+        team_name: g.team?.name || '',
+        minute: g.time?.elapsed ?? 0,
+      })
+    }
+  }
+
+  if (rows.length === 0) return
+
+  const { error } = await supabaseAdmin
+    .from('match_goals')
+    .upsert(rows, { onConflict: 'fixture_id,player_name,minute', ignoreDuplicates: true })
+
+  if (error) {
+    console.error('Error guardando goles en vivo:', error.message)
+  }
+}
+
+// Trae de Supabase los goles ya guardados para partidos finalizados
+async function getSavedGoals(fixtureIds: number[]) {
+  if (fixtureIds.length === 0) return {}
+
+  const { data, error } = await supabaseAdmin
+    .from('match_goals')
+    .select('*')
+    .in('fixture_id', fixtureIds)
+
+  if (error || !data) {
+    console.error('Error leyendo goles guardados:', error?.message)
+    return {}
+  }
+
+  const map: Record<number, any[]> = {}
+  for (const row of data) {
+    if (!map[row.fixture_id]) map[row.fixture_id] = []
+    map[row.fixture_id].push(row)
+  }
+  return map
+}
+
 export default async function Vivo() {
   const today = new Date().toISOString().split('T')[0]
 
@@ -60,8 +111,18 @@ export default async function Vivo() {
       !relevantLive.some((live: any) => live.fixture.id === f.fixture.id)
   )
 
+  // Guardamos los goles de los partidos en vivo (para tenerlos cuando terminen)
+  await saveLiveGoals(relevantLive)
+
+  // Traemos de la base de datos los goles de los partidos ya finalizados
+  const finishedIds = relevantFinished.map((f: any) => f.fixture.id)
+  const savedGoalsMap = await getSavedGoals(finishedIds)
+
   function renderMatch(f: any, mode: 'live' | 'finished' | 'upcoming') {
-    const goals = f.events?.filter((e: any) => e.type === 'Goal') || []
+    const liveGoals = f.events?.filter((e: any) => e.type === 'Goal') || []
+    const storedGoals = savedGoalsMap[f.fixture.id] || []
+    const goals = mode === 'finished' ? storedGoals : liveGoals
+
     const timeLabel = new Date(f.fixture.date).toLocaleTimeString('es-AR', {
       hour: '2-digit',
       minute: '2-digit',
@@ -108,11 +169,16 @@ export default async function Vivo() {
         {(mode === 'live' || mode === 'finished') && goals.length > 0 && (
           <div className="mt-2 pt-2 border-t border-cardBorder">
             <div className="text-[9px] text-muted mb-1">GOLES</div>
-            {goals.map((g: any, i: number) => (
-              <div key={i} className="text-[10px] text-muted">
-                ⚽ {g.player?.name} — {g.team?.name} ({g.time?.elapsed}')
-              </div>
-            ))}
+            {goals.map((g: any, i: number) => {
+              const playerName = mode === 'finished' ? g.player_name : g.player?.name
+              const teamName = mode === 'finished' ? g.team_name : g.team?.name
+              const minute = mode === 'finished' ? g.minute : g.time?.elapsed
+              return (
+                <div key={i} className="text-[10px] text-muted">
+                  ⚽ {playerName} — {teamName} ({minute}')
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
